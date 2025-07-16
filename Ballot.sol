@@ -119,12 +119,74 @@ contract Ballot{
             //if no or any other option, just add to the delegate weight property
             delegate_.weight += sender.weight;
         }
+    }
 
+    function vote(uint256 choice) public {
+        
+        //Create a full copy of the Voter struct for the sender of the cotract
+        Voter storage sender = voters[msg.sender];
+
+        //Check if the caller of the fuction has voting power(weight)
+        if(sender.weight < 1){
+            revert ("You have no voting power");
+        }
+
+        //Check if the caller of the function has voted 
+        if(sender.voted){
+            revert("You have already voted");
+        }
+
+        //If the folowing conditionals above has been passed, then
+        //from the Voter struct created for the sender, update the bool voted
+        sender.voted = true;
+
+        //Then assign the choice of proposal to the struct
+        sender.vote = choice;
+
+        //Then add the vote count to your choice of proposals
+        proposal[choice].voteCount += sender.weight;
+
+    }
+
+    //Function to get the winning proposal during voting
+    function winningProposal() public view returns(uint256 _winningProposal){
+
+        //updating the winner count
+        uint256 winningCount;
+
+        //Loop to ensure that the proposal considered do not exceed the number of element in the proposal array
+        for(uint p = 0; p < proposal.length; p++){
+
+            //Check if the voteCount property of an element is greater than the winningCount
+            //For the first element this will vary cause the voteCount property might be 0 or greater
+            if(proposal[p].voteCount > winningCount){
+
+                //If the above conditionals is correct, then
+                //Assign the voteCount property of that element to winningCount
+                winningCount = proposal[p].voteCount;
+
+                //After the previouse line, then assign that particular element to the 
+                //_winningProposal(to be returned t the caller)
+                _winningProposal = p; //This line automatically return and do not need the return keyword
+            }
+        }
+    }
+
+    //Function to indicate the winner of the Ballot
+    function winnerProposal() public view returns(string memory _name){
+
+        //Assign the call of the winningProposal function to the winner variable
+        uint256 winner = winningProposal();
+
+        //Then get the name of the proposal and return it to the caller.
+        return proposal[winner].name;
     }
 
     modifier OnlyChairPerson{
         if(i_chairPerson != msg.sender) revert NotChairPerson();
         _;
     }
+
+
 
 }
